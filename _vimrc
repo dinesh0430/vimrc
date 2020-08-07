@@ -7,40 +7,8 @@ source $VIMRUNTIME/vimrc_example.vim
 " Use the internal diff if available.
 " Otherwise use the special 'diffexpr' for Windows.
 if &diffopt !~# 'internal'
-  set diffexpr=MyDiff()
+    set diffexpr=MyDiff()
 endif
-function MyDiff()
-  let opt = '-a --binary '
-  if &diffopt =~ 'icase' | let opt = opt . '-i ' | endif
-  if &diffopt =~ 'iwhite' | let opt = opt . '-b ' | endif
-  let arg1 = v:fname_in
-  if arg1 =~ ' ' | let arg1 = '"' . arg1 . '"' | endif
-  let arg1 = substitute(arg1, '!', '\!', 'g')
-  let arg2 = v:fname_new
-  if arg2 =~ ' ' | let arg2 = '"' . arg2 . '"' | endif
-  let arg2 = substitute(arg2, '!', '\!', 'g')
-  let arg3 = v:fname_out
-  if arg3 =~ ' ' | let arg3 = '"' . arg3 . '"' | endif
-  let arg3 = substitute(arg3, '!', '\!', 'g')
-  if $VIMRUNTIME =~ ' '
-    if &sh =~ '\<cmd'
-      if empty(&shellxquote)
-        let l:shxq_sav = ''
-        set shellxquote&
-      endif
-      let cmd = '"' . $VIMRUNTIME . '\diff"'
-    else
-      let cmd = substitute($VIMRUNTIME, ' ', '" ', '') . '\diff"'
-    endif
-  else
-    let cmd = $VIMRUNTIME . '\diff'
-  endif
-  let cmd = substitute(cmd, '!', '\!', 'g')
-  silent execute '!' . cmd . ' ' . opt . arg1 . ' ' . arg2 . ' > ' . arg3
-  if exists('l:shxq_sav')
-    let &shellxquote=l:shxq_sav
-  endif
-endfunction
 "}}}
 
 " vim-plug: Plugin repository lines {{{
@@ -93,6 +61,19 @@ Plug 'plasticboy/vim-markdown'
 " Plugin to add text objects and extend the functionality of built-in text objects
 Plug 'wellle/targets.vim'
 
+" Compile single source files
+Plug 'xuhdev/SingleCompile'
+
+" To show indent characters
+Plug 'Yggdroot/indentLine'
+
+" To see indentation
+Plug 'nathanaelkane/vim-indent-guides'
+
+" Plugin to use undo feature
+Plug 'mbbill/undotree'
+Plug 'simnalamburt/vim-mundo'
+
 call plug#end()
 " }}}
 
@@ -126,7 +107,6 @@ exec 'nnoremap <Leader>sr :so ' . g:session_dir. '\*.vim<C-D><BS><BS><BS><BS><BS
 exec 'nnoremap <Leader>ss :mksession! ' . g:session_dir . '\*.vim<C-D><BS><BS><BS><BS><BS>'
 
 " CTRL SPACE settings
-
 " To have ag as glob command
 let g:CtrlSpaceGlobCommand = 'fd --type file --exclude .git'
 "let g:CtrlSpaceGlobCommand = 'rg --files'
@@ -134,27 +114,27 @@ let g:CtrlSpaceGlobCommand = 'fd --type file --exclude .git'
 " Exclude airline status for CtrlSpace so that we can view emoji
 let g:airline_exclude_preview = 1
 let g:CtrlSpaceUseArrowsInTerm = 1
-let g:CtrlSpaceSymbols = {
-			\ "File": "📁",
-			\ "CS":"🚀",
-			\ "BM":"🔖",
-			\ "Sin":"📄",
-			\ "All":"🌟",
-			\ "Vis":"👁️",
-			\ "Tabs":"",
-			\ "CTab":"",
-			\ "NTM":"",
-			\ "WLoad":"🔻",
-			\ "WSave":"🔺",
-			\ "Zoom":"🔍",
-			\ "SLeft":"▶️",
-			\ "SRight":"◀️",
-			\ "Help":"❓",
-			\ "IV":"",
-			\ "IA":"",
-			\ "IM":" ",
-			\ "Dots":"",
-			\  }
+let g:CtrlSpaceSymbols ={
+                        \ "File": "📁",
+                        \ "CS":"🚀",
+                        \ "BM":"🔖",
+                        \ "Sin":"📄",
+                        \ "All":"🌟",
+                        \ "Vis":"👁️",
+                        \ "Tabs":"",
+                        \ "CTab":"",
+                        \ "NTM":"",
+                        \ "WLoad":"🔻",
+                        \ "WSave":"🔺",
+                        \ "Zoom":"🔍",
+                        \ "SLeft":"▶️",
+                        \ "SRight":"◀️",
+                        \ "Help":"❓",
+                        \ "IV":"",
+                        \ "IA":"",
+                        \ "IM":" ",
+                        \ "Dots":"",
+                        \  }
 
 " To display the count of number of searches
 set shortmess-=S
@@ -194,7 +174,7 @@ autocmd GUIEnter * set visualbell t_vb=
 
 " Powerline fonts config
 if !exists('g:airline_symbols')
-  let g:airline_symbols = {}
+    let g:airline_symbols = {}
 endif
 
 " unicode symbols
@@ -225,7 +205,7 @@ let g:airline_right_alt_sep = ''
 let g:airline_symbols.branch = ''
 let g:airline_symbols.readonly = ''
 let g:airline_symbols.linenr = '☰ '
-let g:airline_symbols.maxlinenr = ' L'
+let g:airline_symbols.maxlinenr = ''
 let g:airline_symbols.dirty='⚡'
 
 " set 'hidden' option makes sure that buffers can be switched without saving them
@@ -249,6 +229,10 @@ noremap! <c-h> <nop>
 " To use <Ctrl-w/s> as <Up/Down> in command line mode
 cnoremap <c-w> <Up>
 cnoremap <c-s> <Down>
+cnoremap <c-a> <Left>
+cnoremap <c-d> <Right>
+cnoremap <c-q> <Home>
+cnoremap <c-d> <End>
 
 " Airline tabline
 let g:airline#extensions#tabline#enabled = 1
@@ -298,13 +282,13 @@ map z? <Plug>(incsearch-fuzzy-?)
 map zg/ <Plug>(incsearch-fuzzy-stay)
 
 function! s:config_easyfuzzymotion(...) abort
-return extend(copy({
-\   'converters': [incsearch#config#fuzzyword#converter()],
-\   'modules': [incsearch#config#easymotion#module({'overwin': 1})],
-\   'keymap': {"\<CR>": '<Over>(easymotion)'},
-\   'is_expr': 0,
-\   'is_stay': 1
-\ }), get(a:, 1, {}))
+    return extend(copy({
+                \   'converters': [incsearch#config#fuzzyword#converter()],
+                \   'modules': [incsearch#config#easymotion#module({'overwin': 1})],
+                \   'keymap': {"\<CR>": '<Over>(easymotion)'},
+                \   'is_expr': 0,
+                \   'is_stay': 1
+                \ }), get(a:, 1, {}))
 endfunction
 
 noremap <silent><expr> <Space>/ incsearch#go(<SID>config_easyfuzzymotion())
@@ -329,10 +313,30 @@ autocmd FileType python :iabbrev <buffer> iff if:<left>
 autocmd FileType vim :iabbrev <buffer> iff dines
 
 
-"Test autocmds grouping 
+"Test autocmds grouping
 " autocmd! (This prevents having the autocommands defined twice (e.g., after sourcing the .vimrc file again)).
 augroup filetype_vim
-	autocmd!	
-	autocmd FileType vim nnoremap <buffer> <localleader>f dd
+    autocmd!
+    autocmd FileType vim nnoremap <buffer> <localleader>f dd
 augroup END
+
+set tabstop=2
+set softtabstop=4
+set shiftwidth=4
+" Expand tabs to spaces
+set et
+
+" To set the indentation character
+let g:indentLine_char='|'
+let g:indentLine_leadingSpaceChar = '·'
+let g:indentLine_leadingSpaceEnabled=1
+
+" To show invisible characters
+set list
+
+" To change the color of the invisible characters to be displayed
+highlight SpecialKey ctermfg=8 guifg=DimGrey
+
+" To configure the characters shown
+set listchars=trail:·,extends:>,precedes:<
 
